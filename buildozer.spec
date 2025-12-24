@@ -41,7 +41,7 @@ android.build_tools_version= 34.0.0
 
 
 # (int) Minimum API your APK / AAB will support.
-android.maxapi=33
+#android.maxapi=33
 android.api=34
 android.minapi = 21
 android.archs = arm64-v8a, armeabi-v7a
@@ -51,7 +51,7 @@ android.archs = arm64-v8a, armeabi-v7a
 android.ndk_api = 21
 
 # (int) Android NDK version to use
-android.ndk = 23b
+android.ndk = 25c
 
 # (list) Permissions (for Android)
 # Example: android.permissions = INTERNET, WAKE_LOCK
