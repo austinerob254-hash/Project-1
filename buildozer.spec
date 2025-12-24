@@ -47,7 +47,7 @@ android.archs = arm64-v8a, armeabi-v7a
 android.ndk_api = 21
 
 # (int) Android NDK version to use
-android.ndk = 25b
+android.ndk = 23b
 
 # (list) Permissions (for Android)
 # Example: android.permissions = INTERNET, WAKE_LOCK
