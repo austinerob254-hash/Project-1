@@ -23,7 +23,6 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .buildozer
-        # The cache is tied to your buildozer.spec file
         key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
           ${{ runner.os }}-buildozer-
@@ -44,26 +43,35 @@ jobs:
     - name: Install Buildozer and Cython
       run: |
         python -m pip install --upgrade pip
+        # Cython 0.29.33 is often required for older Kivy/Buildozer versions
         pip install buildozer cython==0.29.33 setuptools
 
-    - name: Build APK and Force Licenses
+    - name: Build APK and Accept Licenses
       run: |
-        # 1. Start the build process. Piping 'yes' handles the initial 
-        # "Do you want to download the SDK?" and license prompts.
-        # We use '|| true' because the first run often exits early once tools are installed.
+        # 1. Trigger initial download to create the directory structure
+        # We use '|| true' because it will likely fail early on the license check
         yes | buildozer android debug || true
 
-        # 2. Specifically target the Buildozer-managed SDK manager to accept all licenses.
-        # This ensures that even newer versions (like 36.1) are covered.
-        yes | buildozer android sdk_manager -- --licenses
+        # 2. Define the internal Buildozer SDK path
+        export SDK_PATH=$HOME/.buildozer/android/platform/android-sdk
+        
+        # 3. Manually accept licenses using the actual sdkmanager binary
+        # This fixes the "Unknown command sdk_manager" error
+        if [ -d "$SDK_PATH/cmdline-tools/latest/bin" ]; then
+          yes | $SDK_PATH/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_PATH --licenses
+        elif [ -d "$SDK_PATH/tools/bin" ]; then
+          yes | $SDK_PATH/tools/bin/sdkmanager --sdk_root=$SDK_PATH --licenses
+        fi
 
-        # 3. Final build attempt now that licenses are definitely accepted.
-        buildozer android debug
+        # 4. Final build attempt. 
+        # Using 'yes |' here handles any remaining interactive AAB prompts.
+        yes | buildozer android debug
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: galaxy-apk
         path: bin/*.apk
+
 
 
