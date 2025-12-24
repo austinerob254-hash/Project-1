@@ -35,12 +35,14 @@ icon.adaptive_foreground.file_name=%(source.dir)s/Foreground.png
 icon.adaptive_background.filename=%(source.dir)s/Background.jpg
 # (int) Android SDK target version
 android.targetsdk = 33
-p4a.branch=stable
+p4a.branch=master
 android.accept_sdk_license = True
+android.build_tools_version= 34.0.0
 
 
 # (int) Minimum API your APK / AAB will support.
 android.maxapi=33
+android.api=34
 android.minapi = 21
 android.archs = arm64-v8a, armeabi-v7a
 
