@@ -17,14 +17,12 @@ jobs:
       with:
         python-version: '3.10'
 
-    # Using a versioned cache key (-v2-) forces a fresh start if your old build was stuck
+    # Using a fresh cache version (-v3-) to wipe old, broken AAB data
     - name: Cache Buildozer
       uses: actions/cache@v4
       with:
         path: .buildozer
-        key: ${{ runner.os }}-buildozer-v2-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-v2-
+        key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
 
     - name: Install Linux Dependencies
       run: |
@@ -44,17 +42,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install buildozer cython==0.29.33 setuptools
 
-    - name: Initialize Buildozer and Force Licenses
+    - name: Build and Force Licenses
       run: |
-        # 1. Trigger the download of SDK/NDK
-        # This will fail on licenses, so we use || true
+        # 1. Initialize folders (will fail on licenses, which is expected)
         yes | buildozer android debug || true
 
-        # 2. Locate the hidden SDK folder
+        # 2. Target the local Buildozer SDK manager path directly
         export SDK_PATH=$HOME/.buildozer/android/platform/android-sdk
         
-        # 3. Use a 'Here Document' to pipe the exact number of 'y' responses
-        # This prevents the 'Broken Pipe' error seen in your logs
+        # 3. Manually accept licenses one-by-one to avoid Broken Pipe error
+        # This handles the 36.1.0 version specifically
         if [ -d "$SDK_PATH/cmdline-tools/latest/bin" ]; then
           $SDK_PATH/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_PATH --licenses <<EEF
         y
@@ -66,11 +63,8 @@ jobs:
         EEF
         fi
 
-    - name: Final Build
-      run: |
-        # Cleaning once ensures the "AAB support" error is resolved
+        # 4. Final Build: 'clean' fixes the "AAB support" error by refreshing recipes
         buildozer android clean
-        # The actual build command
         buildozer android debug
 
     - name: Upload APK artifact
@@ -78,6 +72,7 @@ jobs:
       with:
         name: galaxy-apk
         path: bin/*.apk
+
 
 
 
