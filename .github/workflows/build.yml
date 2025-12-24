@@ -46,6 +46,7 @@ jobs:
       run: |
         mkdir -p ~/.android
         touch ~/.android/repositories.cfg
+        yes | buildozer android sdk_manager -- --licences || true
 
     - name: Build APK
       run: |
