@@ -3,8 +3,6 @@ name: Build APK
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -19,13 +17,12 @@ jobs:
       with:
         python-version: '3.10'
 
+    # 1. We change the cache key to force a fresh start and fix AAB support
     - name: Cache Buildozer
       uses: actions/cache@v4
       with:
         path: .buildozer
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
+        key: ${{ runner.os }}-buildozer-v2-${{ hashFiles('buildozer.spec') }}
 
     - name: Install Dependencies
       run: |
@@ -40,38 +37,40 @@ jobs:
           liblzma-dev tk-dev libdb-dev autoconf automake libtool pkg-config \
           cmake ant
 
-    - name: Install Buildozer and Cython
+    - name: Install Buildozer
       run: |
         python -m pip install --upgrade pip
-        # Cython 0.29.33 is often required for older Kivy/Buildozer versions
         pip install buildozer cython==0.29.33 setuptools
 
-    - name: Build APK and Accept Licenses
+    - name: Build and Accept Licenses
       run: |
-        # 1. Trigger initial download to create the directory structure
-        # We use '|| true' because it will likely fail early on the license check
+        # Initial run to create the folders (will fail, that's fine)
         yes | buildozer android debug || true
-
-        # 2. Define the internal Buildozer SDK path
+        
+        # Manually target the SDK manager to avoid "Unknown command" error
         export SDK_PATH=$HOME/.buildozer/android/platform/android-sdk
         
-        # 3. Manually accept licenses using the actual sdkmanager binary
-        # This fixes the "Unknown command sdk_manager" error
+        # Use a loop to accept licenses one by one to prevent Broken Pipe
         if [ -d "$SDK_PATH/cmdline-tools/latest/bin" ]; then
-          yes | $SDK_PATH/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_PATH --licenses
-        elif [ -d "$SDK_PATH/tools/bin" ]; then
-          yes | $SDK_PATH/tools/bin/sdkmanager --sdk_root=$SDK_PATH --licenses
+          $SDK_PATH/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_PATH --licenses <<EEF
+        y
+        y
+        y
+        y
+        y
+        y
+        EEF
         fi
 
-        # 4. Final build attempt. 
-        # Using 'yes |' here handles any remaining interactive AAB prompts.
-        yes | buildozer android debug
+        # Final build command
+        buildozer android debug
 
-    - name: Upload APK artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: galaxy-apk
         path: bin/*.apk
+
 
 
 
