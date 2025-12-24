@@ -35,7 +35,7 @@ icon.adaptive_foreground.file_name=%(source.dir)s/Foreground.png
 icon.adaptive_background.filename=%(source.dir)s/Background.jpg
 # (int) Android SDK target version
 android.targetsdk = 33
-p4a.branch=master
+p4a.branch=develop
 android.accept_sdk_license = True
 android.build_tools_version= 34.0.0
 
